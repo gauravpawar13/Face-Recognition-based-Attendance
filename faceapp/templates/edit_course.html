@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Edit Course - {{ course }}</h1>
+
+{% if students %}
+    <h2>Enrolled Students:</h2>
+    <ul>
+        {% for student in students %}
+        <li>{{ student }}</li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No students enrolled in this course yet.</p>
+{% endif %}
+
+<hr>
+
+<h2>Enroll Student:</h2>
+<form method="POST">
+    {% csrf_token %}
+    <label for="student_id">Student ID:</label>
+    <input type="text" id="student_id" name="student_id">
+    <button type="submit">Enroll</button>
+</form>
+{% endblock %}

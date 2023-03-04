@@ -1,0 +1,26 @@
+<!-- home.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-sm-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Select Course</h5>
+          <form>
+            <div class="form-group">
+              <select class="form-control" id="courseSelect">
+                <option>Select Course</option>
+              </select>
+            </div>
+          </form>
+          <button type="button" class="btn btn-primary">Start Camera</button>
+          <button type="button" class="btn btn-danger">Quit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

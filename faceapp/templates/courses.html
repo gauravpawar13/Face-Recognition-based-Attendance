@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container">
+    <h1 class="my-4">Courses</h1>
+    <div class="row">
+      <div class="col-md-6">
+        <form method="post" action="{% url 'add_course' %}" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="course_id">Course ID:</label>
+            <input type="text" class="form-control" id="course_id" name="course_id" required>
+          </div>
+          <div class="form-group">
+            <label for="course_name">Course Name:</label>
+            <input type="text" class="form-control" id="course_name" name="course_name" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Add Course</button>
+        </form>
+      </div>
+    </div>
+    <hr>
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
+          {% endfor %}
+      </ul>
+    {% endif %}
+    <div class="row">
+      <div class="col-md-12">
+        {% if courses %}
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Course ID</th>
+                <th>Course Name</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for course in courses %}
+                <tr>
+                  <td>{{ course.course_id }}</td>
+                  <td>{{ course.course_name }}</td>
+                  <td>
+                    <a href="{% url 'edit_course' course.course_id %}" class="btn btn-sm btn-primary">Edit</a>
+                    <button type="button" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#deleteModal{{ course.course_id }}">Delete</button>
+                    <div class="modal fade" id="deleteModal{{ course.course_id }}" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                      <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="deleteModalLabel">Delete Course</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true">&times;</span>
+                            </button>
+                          </div>
+                          <div class="modal-body">
+                            Are you sure you want to delete "{{ course.course_name }}" course?
+                          </div>
+                          <div class="modal-footer">
+                            <form method="post" action="{% url 'delete_course' course.course_id %}">
+                              {% csrf_token %}
+                              <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p>No courses found.</p>  
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
