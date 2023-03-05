@@ -1,6 +1,6 @@
 # from pyexpat.errors import messages
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render
 
 # Create your views here.
@@ -101,6 +101,18 @@ def edit_course(request, course_id):
                     messages.warning(request, f'{student} is already enrolled in {course} course.')
             except Student.DoesNotExist:
                 messages.error(request, f'Student with ID {student_id} does not exist.')
+        else:
+            enrollment_id = request.POST.get('enrollment_id')
+            if enrollment_id:
+                try:
+                    enrollment = Enrollment.objects.get(id=enrollment_id, course=course)
+                    student = enrollment.student
+                    enrollment.delete()
+                    messages.success(request, f'{student} unenrolled successfully from {course} course.')
+                except Enrollment.DoesNotExist:
+                    messages.error(request, 'Invalid enrollment ID')
+            else:
+                return HttpResponseBadRequest()
         return redirect(reverse('edit_course', kwargs={'course_id': course_id}))
         
     context = {
@@ -108,3 +120,16 @@ def edit_course(request, course_id):
         'students': students,
     }
     return render(request, 'edit_course.html', context)
+
+def unenroll_student(request, course_id, student_id):
+    course = get_object_or_404(Course, course_id=course_id)
+    student = get_object_or_404(Student, student_id=student_id)
+    
+    try:
+        enrollment = Enrollment.objects.get(course=course, student=student)
+        enrollment.delete()
+        messages.success(request, f'Student {student} unenrolled from {course}.')
+    except Enrollment.DoesNotExist:
+        messages.warning(request, f'Student {student} is not enrolled in {course}.')
+        
+    return redirect(reverse('edit_course', kwargs={'course_id': course_id}))
