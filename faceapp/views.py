@@ -1,17 +1,38 @@
 # from pyexpat.errors import messages
 from django.contrib import messages
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render
 
 # Create your views here.
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from .models import Course, Student, Enrollment
+from .models import Course, Student, Enrollment,Attendance
 from .forms import CourseForm, DeleteStudentForm, StudentForm, EnrollmentForm
 
+from django.shortcuts import render
+from .models import Course, Student
+
 def home(request):
+    selected_course = request.GET.get('course_id')
+
+    if selected_course:
+        selected_course = selected_course
+        selected_course_name = Course.objects.get(course_id=selected_course).course_name
+        students = Student.objects.filter(enrollment__course=selected_course)
+    else:
+        selected_course_name = None
+        students = None
+
     courses = Course.objects.all()
-    return render(request, 'home.html', {'courses': courses})
+    context = {
+        'courses': courses,
+        'selected_course': selected_course,
+        'selected_course_name': selected_course_name,
+        'students': students,
+    }
+    return render(request, 'home.html', context)
+
+
 
 def add_student(request):
     if request.method == 'POST':

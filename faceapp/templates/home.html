@@ -1,26 +1,91 @@
-<!-- home.html -->
 {% extends 'base.html' %}
-
+{% load static %}
 {% block content %}
-<div class="container-fluid">
-  <div class="row justify-content-center">
-    <div class="col-md-6 col-sm-12">
+  <div class="row">
+    <div class="col-md-6">
       <div class="card">
+        <div class="card-header">Courses</div>
         <div class="card-body">
-          <h5 class="card-title">Select Course</h5>
-          <form>
-            <div class="form-group">
-              <select class="form-control" id="courseSelect">
-                <option>Select Course</option>
-              </select>
-            </div>
-          </form>
-          <button type="button" class="btn btn-primary">Start Camera</button>
-          <button type="button" class="btn btn-danger">Quit</button>
+          <ul class="list-group">
+            {% for course in courses %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              {{ course.course_name }}
+              {% if selected_course == course.course_id %}
+              <button class="btn btn-primary btn-sm" disabled>Selected</button>
+              {% else %}
+              <a href="{% url 'home' %}?course_id={{ course.course_id }}" class="btn btn-primary btn-sm select-course-btn">Select Course</a>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">Attendance</div>
+        <div class="card-body">
+          {% if selected_course %}
+            <h5>Attendance for {{ selected_course_name }}:</h5>
+            {% if students %}
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Student ID</th>
+                    <th>Name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for student in students %}
+                  <tr>
+                    <td>{{ student.student_id }}</td>
+                    <td>{{ student.name }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              <button class="btn btn-primary" id="start-attendance">Start Attendance</button>
+              <button class="btn btn-danger" id="stop-attendance" disabled>Stop Attendance</button>
+            {% else %}
+              <p>No students enrolled in this course.</p>
+            {% endif %}
+          {% else %}
+            <p>Please select a course to start attendance.</p>
+          {% endif %}
         </div>
       </div>
     </div>
   </div>
-</div>
+  <div id="camera-container" class="d-none">
+    <div class="card">
+      <div class="card-header">Camera</div>
+      <div class="card-body">
+        <div id="camera-view"></div>
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
+{% block js %}
+  <script src="{% static 'js/home.js' %}"></script>
+  <script>
+    const selectCourseBtns = document.querySelectorAll('.select-course-btn');
+    selectCourseBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        selectCourseBtns.forEach(otherBtn => {
+          otherBtn.innerHTML = 'Select Course';
+          otherBtn.removeAttribute('disabled');
+        });
+        btn.innerHTML = 'Selected';
+        btn.setAttribute('disabled', '');
+        fetch(btn.href)
+          .then(response => response.text())
+          .then(html => {
+            const studentsContainer = document.querySelector('#attendance-table');
+            studentsContainer.innerHTML = html;
+          });
+      });
+    });
+  </script>
+{% endblock %}
