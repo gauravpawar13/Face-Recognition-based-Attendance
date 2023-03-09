@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+
 {% block content %}
   <div class="row">
     <div class="col-md-6">
@@ -23,10 +24,10 @@
     </div>
     <div class="col-md-6">
       <div class="card">
-        <div class="card-header">Attendance</div>
+        <div class="card-header">Enrollments</div>
         <div class="card-body">
           {% if selected_course %}
-            <h5>Attendance for {{ selected_course_name }}:</h5>
+            <h5>Students of {{ selected_course_name }}:</h5>
             {% if students %}
               <table class="table">
                 <thead>
@@ -45,7 +46,7 @@
                 </tbody>
               </table>
               <button class="btn btn-primary" id="start-attendance">Start Attendance</button>
-              <button class="btn btn-danger" id="stop-attendance" disabled>Stop Attendance</button>
+              <button class="btn btn-danger" id="stop-attendance" disabled>Show Attendance</button>
             {% else %}
               <p>No students enrolled in this course.</p>
             {% endif %}
@@ -56,36 +57,86 @@
       </div>
     </div>
   </div>
-  <div id="camera-container" class="d-none">
-    <div class="card">
-      <div class="card-header">Camera</div>
-      <div class="card-body">
-        <div id="camera-view"></div>
+  <div class="container" id="attendance-sheet" style="display:block;">
+    <div class="row mt-5">
+      <div class="col-md-8 offset-md-2">
+        <h2 class="text-center mb-4">Attendance Sheet</h2>
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th scope="col">Student ID</th>
+              <th scope="col">Name</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for student in nameList %}
+              <tr>
+                <td>{{ student }}</td>
+                <td>{{ student }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
+  
+  
+  <h3 id="testjs">Test here</h3>
 {% endblock %}
 
 {% block js %}
-  <script src="{% static 'js/home.js' %}"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
-    const selectCourseBtns = document.querySelectorAll('.select-course-btn');
-    selectCourseBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        selectCourseBtns.forEach(otherBtn => {
-          otherBtn.innerHTML = 'Select Course';
-          otherBtn.removeAttribute('disabled');
-        });
-        btn.innerHTML = 'Selected';
-        btn.setAttribute('disabled', '');
-        fetch(btn.href)
-          .then(response => response.text())
-          .then(html => {
-            const studentsContainer = document.querySelector('#attendance-table');
-            studentsContainer.innerHTML = html;
-          });
+    // Get the CSRF token from the cookie
+    const csrftoken = document.cookie.match(/csrftoken=([\w-]+)/)[1];
+
+    // Set the CSRF token in the AJAX request headers
+    $.ajaxSetup({
+      beforeSend: function(xhr, settings) {
+        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+      }
+    });
+    const startAttendanceButton = document.getElementById('start-attendance');
+    const stopAttendanceButton = document.getElementById('stop-attendance');
+
+    // Start the webcam when the Start Attendance button is clicked
+    startAttendanceButton.addEventListener('click', () => {
+      startAttendanceButton.disabled = true;
+      var courseid='{{selected_course}}'
+      $.ajax({
+        url: '/take_attendance/',
+        type: 'POST',
+        data: {action: 'start',course_id:courseid},
+        success: function(response) {
+          console.log("Closed the camera");
+          stopAttendanceButton.disabled = false;
+          document.getElementById("testjs").innerHTML=response["success"]
+        },
+        error: function(xhr, status, error) {
+          console.log(xhr.responseText);
+        }
       });
     });
+
+    // Stop the webcam when the Stop Attendance button is clicked
+    stopAttendanceButton.addEventListener('click', () => {
+      startAttendanceButton.disabled = false;
+
+      stopAttendanceButton.disabled = true;
+      $.ajax({
+        url: '/take_attendance/',
+        type: 'POST',
+        data: {action: 'stop'},
+        success: function(response) {
+          console.log(response.message);
+        },
+        error: function(xhr, status, error) {
+          console.log(xhr.responseText);
+        }
+      });
+    });
+    
   </script>
 {% endblock %}
+

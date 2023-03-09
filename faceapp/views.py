@@ -2,6 +2,10 @@
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render
+import cv2
+import numpy as np
+import face_recognition
+import os
 
 # Create your views here.
 from django.shortcuts import render, redirect, get_object_or_404
@@ -32,7 +36,92 @@ def home(request):
     }
     return render(request, 'home.html', context)
 
+def take_attendance(request):
+    # print("Inside take")
 
+    def Encodings(images):
+        encodeList = []
+        for img in images:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            encode = face_recognition.face_encodings(img)[0]
+            encodeList.append(encode)
+        return encodeList
+    if request.method == 'POST':
+        # Start the attendance
+        # print("Called take_attendance")
+        if request.POST.get('action') == 'start':
+            path="student_photos"   # file where images are stored
+            images=[]
+            classNames=[]
+            namelist=[]
+            mylist=[]
+            course_id=request.POST.get('course_id') 
+            # print("course id is",course_id)     
+            # print("Selected course is",Course.objects.get(course_id=course_id).course_name)                       # list of 
+            mylist=Student.objects.filter(enrollment__course=course_id)      # req images
+            # print("Got selected students")
+            # for stud in mylist:
+            #     print(stud.student_id, stud.name)
+
+            for cls in mylist:
+                current_image = cv2.imread(f"{cls.photo}")
+                images.append(current_image)
+                classNames.append(cls.name)
+
+            print("Got the Class details")
+
+            encoded_list=Encodings(images)
+            print("Encoded images")
+
+            webcam = cv2.VideoCapture(0,cv2.CAP_DSHOW)
+            if not webcam.isOpened():
+                return JsonResponse({'success': False, 'message': 'Failed to open camera.'})
+            while True:
+                successful_frame_read, frame = webcam.read()
+                if successful_frame_read:
+                    sized_image=cv2.resize(frame,(0,0),None,0.25,0.25)
+                    sized_image = cv2.cvtColor(sized_image, cv2.COLOR_BGR2RGB)
+
+                    faceloc = face_recognition.face_locations(sized_image)
+                    encodedface = face_recognition.face_encodings(sized_image, faceloc)
+
+                    if encoded_list:
+                        # for comparing the faces with previously loaded data
+                        for encodeofface, locofface in zip(encodedface, faceloc):
+                            matches = face_recognition.compare_faces(encoded_list, encodeofface)
+                            if len(matches) == 0:  # no matches found for current face
+                                continue  # skip to next face
+                            facedis = face_recognition.face_distance(encoded_list, encodeofface)
+                            matchindex = np.argmin(facedis)
+
+                            if matches[matchindex]:
+                                name = classNames[matchindex]
+                                print(name)
+                                # print("faceloc", faceloc)
+                                y1, x2, y2, x1 = locofface
+                                y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
+                                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                                cv2.rectangle(frame, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
+                                cv2.putText(frame, str(name), (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
+                                if name not in namelist:  # so that one student one entry
+                                    # df=df.append(markAttendance(name), ignore_index=True)
+                                    namelist.append(name)
+
+                    cv2.imshow("webcam", frame)
+
+                    key = cv2.waitKey(1)  # for taking a key as input
+                    if key == 81 or key == 113:  # for quiting the task by pressing q or Q
+                        break
+            print(namelist)
+                    
+            webcam.release()
+            cv2.destroyAllWindows()
+        
+        # pres_stud=Student.objects.filter(student.photo)
+        
+        return JsonResponse({'success': namelist})
+    
+    return render(request, 'home.html',{'attendance_data':namelist})
 
 def add_student(request):
     if request.method == 'POST':
