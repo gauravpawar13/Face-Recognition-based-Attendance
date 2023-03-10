@@ -18,14 +18,14 @@ from django.urls import path
 from faceapp import views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('',views.home, name='home'),
-    path('add_student/', views.add_student, name='add_student'),
-    path('delete_student/', views.delete_student, name='delete_student'),
-    path('courses/', views.courses, name='courses'),
-    path('add_course/', views.add_course, name='add_course'),
-    path('edit_course/<str:course_id>/', views.edit_course, name='edit_course'),
-    path('delete_course/<str:course_id>/', views.delete_course, name='delete_course'),
-    path('unenroll_student/<str:course_id>/unenroll/<str:student_id>/', views.unenroll_student, name='unenroll_student'),
-    path('take_attendance/', views.take_attendance, name='take_attendance'),
+    path("admin/", admin.site.urls),
+    path("", views.home, name="home"),
+    path("add_student/", views.add_student, name="add_student"),
+    path("delete_student/", views.delete_student, name="delete_student"),
+    path("courses/", views.courses, name="courses"),
+    path("add_course/", views.add_course, name="add_course"),
+    path("edit_course/<str:course_id>/", views.edit_course, name="edit_course"),
+    path("delete_course/<str:course_id>/", views.delete_course, name="delete_course"),
+    path("unenroll_student/<str:course_id>/unenroll/<str:student_id>/",views.unenroll_student,name="unenroll_student"),
+    path("take_attendance/", views.take_attendance, name="take_attendance"),
 ]

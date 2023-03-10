@@ -1,5 +1,6 @@
 from django.db import models
 import os
+import json
 
 # Create your models here.
 
@@ -21,6 +22,9 @@ class Student(models.Model):
                 os.remove(self.photo.path)
         # Call the default delete method
         super().delete(*args, **kwargs)
+    
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
     
 class Course(models.Model):
     course_id = models.CharField(primary_key=True, unique=True, max_length=20)

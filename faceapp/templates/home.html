@@ -2,141 +2,170 @@
 {% load static %}
 
 {% block content %}
-  <div class="row">
-    <div class="col-md-6">
-      <div class="card">
-        <div class="card-header">Courses</div>
-        <div class="card-body">
-          <ul class="list-group">
-            {% for course in courses %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-              {{ course.course_name }}
-              {% if selected_course == course.course_id %}
-              <button class="btn btn-primary btn-sm" disabled>Selected</button>
-              {% else %}
-              <a href="{% url 'home' %}?course_id={{ course.course_id }}" class="btn btn-primary btn-sm select-course-btn">Select Course</a>
-              {% endif %}
-            </li>
-            {% endfor %}
-          </ul>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-6">
-      <div class="card">
-        <div class="card-header">Enrollments</div>
-        <div class="card-body">
-          {% if selected_course %}
-            <h5>Students of {{ selected_course_name }}:</h5>
-            {% if students %}
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Student ID</th>
-                    <th>Name</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for student in students %}
-                  <tr>
-                    <td>{{ student.student_id }}</td>
-                    <td>{{ student.name }}</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-              <button class="btn btn-primary" id="start-attendance">Start Attendance</button>
-              <button class="btn btn-danger" id="stop-attendance" disabled>Show Attendance</button>
-            {% else %}
-              <p>No students enrolled in this course.</p>
-            {% endif %}
-          {% else %}
-            <p>Please select a course to start attendance.</p>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="container" id="attendance-sheet" style="display:block;">
-    <div class="row mt-5">
-      <div class="col-md-8 offset-md-2">
-        <h2 class="text-center mb-4">Attendance Sheet</h2>
-        <table class="table table-striped">
-          <thead>
-            <tr>
-              <th scope="col">Student ID</th>
-              <th scope="col">Name</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for student in nameList %}
-              <tr>
-                <td>{{ student }}</td>
-                <td>{{ student }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-  
-  
-  <h3 id="testjs">Test here</h3>
+<div class="row">
+	<div class="col-md-6">
+		<div class="card">
+			<div class="card-header">Courses</div>
+			<div class="card-body">
+				<ul class="list-group">
+					{% for course in courses %}
+					<li class="list-group-item d-flex justify-content-between align-items-center">
+						{{ course.course_name }}
+						{% if selected_course == course.course_id %}
+						<button class="btn btn-primary btn-sm" disabled>Selected</button>
+						{% else %}
+						<a href="{% url 'home' %}?course_id={{ course.course_id }}"
+							class="btn btn-primary btn-sm select-course-btn">Select Course</a>
+						{% endif %}
+					</li>
+					{% endfor %}
+				</ul>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-6">
+		<div class="card">
+			<div class="card-header">Enrollments</div>
+			<div class="card-body">
+				{% if selected_course %}
+				<h5>Students of {{ selected_course_name }}:</h5>
+				{% if students %}
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Student ID</th>
+							<th>Name</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for student in students %}
+						<tr>
+							<td>{{ student.student_id }}</td>
+							<td>{{ student.name }}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+				<button class="btn btn-primary" id="start-attendance">Start Attendance</button>
+				<button class="btn btn-danger" id="download-attendance" disabled>Download Attendance</button>
+				{% else %}
+				<p>No students enrolled in this course.</p>
+				{% endif %}
+				{% else %}
+				<p>Please select a course to start attendance.</p>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+</div>
+<div class="container" id="attendance-sheet" style="display:block;">
+	<div class="row mt-5">
+		<div class="col-md-8 offset-md-2">
+			<h2 class="text-center mb-4">Attendance Sheet</h2>
+			<table class="table table-striped">
+				<thead>
+					<tr>
+						<th>Student ID</th>
+						<th>Student Name</th>
+					</tr>
+				</thead>
+				<tbody id="attendance-table">
+					<!-- attendance data will be populated here -->
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+
+
+<!-- <h3 id="testjs">TEst</h3> -->
 {% endblock %}
 
 {% block js %}
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script>
-    // Get the CSRF token from the cookie
-    const csrftoken = document.cookie.match(/csrftoken=([\w-]+)/)[1];
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.3/xlsx.full.min.js"></script>
 
-    // Set the CSRF token in the AJAX request headers
-    $.ajaxSetup({
-      beforeSend: function(xhr, settings) {
-        xhr.setRequestHeader("X-CSRFToken", csrftoken);
-      }
-    });
-    const startAttendanceButton = document.getElementById('start-attendance');
-    const stopAttendanceButton = document.getElementById('stop-attendance');
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+	// Get the CSRF token from the cookie
+	const csrftoken = document.cookie.match(/csrftoken=([\w-]+)/)[1];
 
-    // Start the webcam when the Start Attendance button is clicked
-    startAttendanceButton.addEventListener('click', () => {
-      startAttendanceButton.disabled = true;
-      var courseid='{{selected_course}}'
-      $.ajax({
-        url: '/take_attendance/',
-        type: 'POST',
-        data: {action: 'start',course_id:courseid},
-        success: function(response) {
-          console.log("Closed the camera");
-          stopAttendanceButton.disabled = false;
-          document.getElementById("testjs").innerHTML=response["success"]
-        },
-        error: function(xhr, status, error) {
-          console.log(xhr.responseText);
-        }
-      });
-    });
+	// Set the CSRF token in the AJAX request headers
+	$.ajaxSetup({
+		beforeSend: function (xhr, settings) {
+			xhr.setRequestHeader("X-CSRFToken", csrftoken);
+		}
+	});
+	const startAttendanceButton = document.getElementById('start-attendance');
+	const downloadAttendanceButton = document.getElementById('download-attendance');
 
-    // Stop the webcam when the Stop Attendance button is clicked
-    stopAttendanceButton.addEventListener('click', () => {
-      startAttendanceButton.disabled = false;
+	// Start the webcam when the Start Attendance button is clicked
+	startAttendanceButton.addEventListener('click', () => {
+		startAttendanceButton.disabled = true;
+		var courseid = '{{selected_course}}'
+		$.ajax({
+			url: '/take_attendance/',
+			type: 'POST',
+			data: { action: 'start', course_id: courseid },
 
-      stopAttendanceButton.disabled = true;
-      $.ajax({
-        url: '/take_attendance/',
-        type: 'POST',
-        data: {action: 'stop'},
-        success: function(response) {
-          console.log(response.message);
-        },
-        error: function(xhr, status, error) {
-          console.log(xhr.responseText);
-        }
-      });
-    });
-    
-  </script>
+			success: function (response) {
+				var students = JSON.parse(response);
+				var tableBody = $('#attendance-table');
+				// Clear the table before populating it with new data
+				tableBody.empty();
+				$.each(students, function (index, student) {
+					var row = $('<tr>');
+					$('<td>').text(student.pk).appendTo(row);
+					$('<td>').text(student.fields.name).appendTo(row);
+
+					tableBody.append(row);
+				});
+				downloadAttendanceButton.disabled = false;
+			},
+			error: function (xhr, status, error) {
+				console.log(xhr.responseText);
+			}
+		});
+	});
+
+	// Convert string to ArrayBuffer
+	function s2ab(s) {
+		var buf = new ArrayBuffer(s.length);
+		var view = new Uint8Array(buf);
+		for (var i = 0; i < s.length; i++) {
+			view[i] = s.charCodeAt(i) & 0xFF;
+		}
+		return buf;
+	}
+
+	// Stop the webcam when the Stop Attendance button is clicked
+	downloadAttendanceButton.addEventListener('click', () => {
+		startAttendanceButton.disabled = false;
+		// Create a new workbook
+		var wb = XLSX.utils.book_new();
+
+		// Convert the attendance table to worksheet data
+		var wsData = [['Student ID', 'Student Name']];
+		$('#attendance-table tr').each(function () {
+			var rowData = [];
+			$(this).find('td').each(function () {
+				rowData.push($(this).text());
+			});
+			wsData.push(rowData);
+		});
+		var ws = XLSX.utils.aoa_to_sheet(wsData);
+
+		// Add the worksheet to the workbook
+		XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
+
+		// Generate a download link for the workbook
+		var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+		var URL = window.URL || window.webkitURL;
+		var downloadLink = document.createElement('a');
+		downloadLink.href = URL.createObjectURL(new Blob([s2ab(wbout)], { type: 'application/octet-stream' }));
+		downloadLink.download = 'attendance.xlsx';
+		downloadLink.click();
+		downloadAttendanceButton.disabled = true;
+	});
+
+</script>
 {% endblock %}
-
